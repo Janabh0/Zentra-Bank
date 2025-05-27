@@ -1,5 +1,3 @@
-import { useAuth } from "../../context/AuthContext";
-import { useMutation } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -9,7 +7,6 @@ import {
   TouchableOpacity,
   View,
   Text,
-  ActivityIndicator,
   Alert,
   Image,
 } from "react-native";
@@ -18,7 +15,6 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [image, setImage] = useState<string | null>(null);
-  const { register } = useAuth();
   const router = useRouter();
 
   const pickImage = async () => {
@@ -38,26 +34,9 @@ export default function Register() {
     }
   };
 
-  const {
-    mutate,
-    isError,
-    error,
-    isPending: isLoading,
-  } = useMutation({
-    mutationKey: ["register"],
-    mutationFn: async () => {
-      if (!username || !password) {
-        throw new Error("Please fill in all required fields");
-      }
-      return register(username, password, image || undefined);
-    },
-    onError: (error: Error) => {
-      Alert.alert("Registration Failed", error.message);
-    },
-  });
-
   const handleRegister = () => {
-    mutate();
+    // TODO: Implement register logic
+    console.log("Register pressed");
   };
 
   const goToLogin = () => {
@@ -84,7 +63,6 @@ export default function Register() {
         value={username}
         onChangeText={setUsername}
         autoCapitalize="none"
-        editable={!isLoading}
       />
       <TextInput
         placeholder="Password"
@@ -93,25 +71,10 @@ export default function Register() {
         onChangeText={setPassword}
         secureTextEntry
         autoCapitalize="none"
-        editable={!isLoading}
       />
 
-      {isError && (
-        <Text style={styles.errorText}>
-          {error?.message || "Error during registration"}
-        </Text>
-      )}
-
-      <TouchableOpacity
-        style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleRegister}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Register</Text>
-        )}
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={goToLogin} style={styles.loginLink}>
@@ -173,18 +136,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-  buttonDisabled: {
-    backgroundColor: "#ccc",
-  },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  errorText: {
-    color: "red",
-    marginBottom: 10,
-    textAlign: "center",
   },
   loginLink: {
     marginTop: 20,

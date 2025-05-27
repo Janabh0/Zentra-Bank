@@ -1,116 +1,27 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useRouter, useSegments } from "expo-router";
-import { AuthContextType, AuthState } from "../types/auth";
-import { authService } from "../services/auth.service";
+// AuthContext.tsx
+import React, { createContext, useState, useContext } from "react";
+import { getToken } from "@/api/storage";
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-// This hook can be used to access the user info
-export function useAuth() {
-  const value = useContext(AuthContext);
-  if (!value) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return value;
+interface AuthContextType {
+  isAuthenticated: boolean;
+  setIsAuthenticated: (value: boolean) => void;
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    isAuthenticated: false,
-    user: null,
-    token: null,
-  });
-  const segments = useSegments();
-  const router = useRouter();
+const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  setIsAuthenticated: () => {},
+});
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    const inAuthGroup = segments[0] === "(auth)";
-
-    if (state.isAuthenticated && inAuthGroup) {
-      // Redirect authenticated users to home page if they're on an auth page
-      router.replace("/(protected)/(tabs)/(home)");
-    } else if (!state.isAuthenticated && !inAuthGroup) {
-      // Redirect unauthenticated users to login page if they're not on an auth page
-      router.replace("/(auth)/Login");
-    }
-  }, [state.isAuthenticated, segments]);
-
-  const checkAuth = async () => {
-    try {
-      const token = await authService.getToken();
-      const user = await authService.getUser();
-
-      setState({
-        isAuthenticated: !!token && !!user,
-        user,
-        token,
-      });
-    } catch (error) {
-      setState({
-        isAuthenticated: false,
-        user: null,
-        token: null,
-      });
-    }
-  };
-
-  const login = async (username: string, password: string) => {
-    try {
-      const { token, user } = await authService.login(username, password);
-      setState({
-        isAuthenticated: true,
-        user,
-        token,
-      });
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const register = async (
-    username: string,
-    password: string,
-    image?: string
-  ) => {
-    try {
-      const { token, user } = await authService.register(
-        username,
-        password,
-        image
-      );
-      setState({
-        isAuthenticated: true,
-        user,
-        token,
-      });
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const logout = async () => {
-    await authService.logout();
-    setState({
-      isAuthenticated: false,
-      user: null,
-      token: null,
-    });
-  };
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
-    <AuthContext.Provider
-      value={{
-        ...state,
-        login,
-        register,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
+
+export const useAuth = () => useContext(AuthContext);
+
+export default AuthContext;

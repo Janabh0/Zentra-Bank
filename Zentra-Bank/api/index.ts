@@ -1,12 +1,8 @@
-// set up for axios
 import axios from "axios";
 import { getToken } from "./storage";
 
-const instance = axios.create({
-  baseURL: "https://coded-projects-api.herokuapp.com/mini-project/api",
-  headers: {
-    Accept: "application/json",
-  },
+export const instance = axios.create({
+  baseURL: "https://react-bank-project.eapi.joincoded.com/mini-project/api",
 });
 
 //authorization
@@ -17,12 +13,6 @@ instance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Set content type based on the data being sent
-    if (config.data instanceof FormData) {
-      config.headers["Content-Type"] = "multipart/form-data";
-    } else {
-      config.headers["Content-Type"] = "application/json";
-    }
     return config;
   },
   (error) => {
@@ -30,4 +20,12 @@ instance.interceptors.request.use(
   }
 );
 
-export default instance;
+instance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.log("API Error:", error.response?.status, error.response?.data);
+    return Promise.reject(error);
+  }
+);
+
+//export default instance;

@@ -1,167 +1,121 @@
-import { getToken } from "@/api/storage";
-import { useAuth } from "../../context/AuthContext";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
   Text,
-  ActivityIndicator,
+  View,
+  TextInput,
+  Button,
   Alert,
+  TouchableOpacity,
 } from "react-native";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 
-export default function Login() {
+const signin = async (username: string, password: string) => {
+  const response = await axios.post(
+    "https://react-bank-project.eapi.joincoded.com/mini-project/api/auth/login",
+    {
+      username,
+      password,
+    }
+  );
+  return response.data;
+};
+
+const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { setIsAuthenticated } = useAuth();
   const router = useRouter();
 
-  const {
-    mutate,
-    isError,
-    error,
-    isPending: isLoading,
-  } = useMutation({
-    mutationKey: ["login"],
-    mutationFn: async () => {
-      if (!username || !password) {
-        throw new Error("Please fill in all fields");
-      }
-
-      await getToken();
-
-      return login(username, password);
+  const loginMutation = useMutation({
+    mutationFn: ({
+      username,
+      password,
+    }: {
+      username: string;
+      password: string;
+    }) => signin(username, password),
+    onSuccess: (data) => {
+      setIsAuthenticated(true);
+      Alert.alert("Login Success");
+      router.replace("/");
     },
-    onError: (error: Error) => {
-      Alert.alert("Login Failed", error.message);
+    onError: (error: any) => {
+      Alert.alert(
+        "Login Failed",
+        error?.response?.data?.message || "Invalid username or password"
+      );
     },
   });
 
-  const handleLogin = () => {
-    mutate();
-  };
-
-  const goToRegister = () => {
-    router.push("/(auth)/Register");
-  };
-
   return (
     <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>Zentra Bank</Text>
-        <Text style={styles.subtitle}>Welcome back!</Text>
-      </View>
+      <Text style={styles.title}>Login</Text>
 
-      <View style={styles.formContainer}>
-        <TextInput
-          placeholder="Username"
-          style={styles.input}
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          editable={!isLoading}
-        />
-        <TextInput
-          placeholder="Password"
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          editable={!isLoading}
-        />
+      <TextInput
+        placeholder="Username"
+        style={styles.input}
+        value={username}
+        onChangeText={setUsername}
+        autoCapitalize="none"
+      />
+      <TextInput
+        placeholder="Password"
+        style={styles.input}
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Button
+        title={loginMutation.isPending ? "Logging in..." : "Login"}
+        onPress={() => {
+          if (!username || !password) {
+            Alert.alert("Missing Info", "Please enter both fields.");
+            return;
+          }
+          loginMutation.mutate({ username, password });
+        }}
+        disabled={loginMutation.isPending}
+      />
 
-        {isError && (
-          <Text style={styles.errorText}>
-            {error?.message || "Invalid credentials"}
-          </Text>
-        )}
-
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={goToRegister} style={styles.registerLink}>
-          <Text style={styles.registerText}>
-            Don't have an account? Register here
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        onPress={() => router.push("/(auth)/Register")}
+        style={styles.registerButton}
+      >
+        <Text style={styles.registerText}>Don't have an account? Register</Text>
+      </TouchableOpacity>
     </View>
   );
-}
+};
+
+export default Login;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  logoContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#007AFF",
-  },
-  logoText: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "#fff",
-    opacity: 0.8,
-  },
-  formContainer: {
-    flex: 2,
     padding: 20,
-    justifyContent: "center",
+    marginTop: 100,
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 16,
+    fontWeight: "bold",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 15,
-    marginBottom: 15,
+    borderColor: "#ccc",
+    padding: 10,
+    marginBottom: 12,
     borderRadius: 5,
-    backgroundColor: "#fff",
   },
-  button: {
-    backgroundColor: "#007AFF",
-    padding: 15,
-    borderRadius: 5,
+  registerButton: {
+    marginTop: 16,
     alignItems: "center",
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    backgroundColor: "#ccc",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  errorText: {
-    color: "red",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  registerLink: {
-    marginTop: 20,
   },
   registerText: {
-    color: "#007AFF",
-    textAlign: "center",
+    color: "blue",
+    textDecorationLine: "underline",
   },
 });
