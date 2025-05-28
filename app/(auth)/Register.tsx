@@ -4,14 +4,15 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import { API_CONFIG, buildUrl } from "../../api/config";
 
 const register = async (
   username: string,
@@ -35,7 +36,7 @@ const register = async (
   }
 
   const response = await axios.post(
-    "https://react-bank-project.eapi.joincoded.com/mini-project/api/auth/register",
+    buildUrl(API_CONFIG.ENDPOINTS.REGISTER),
     formData,
     {
       headers: {

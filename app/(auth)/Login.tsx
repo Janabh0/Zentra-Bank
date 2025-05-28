@@ -3,19 +3,21 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
-  Button,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Button,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import { API_CONFIG, buildUrl } from "../../api/config";
+import { storeToken } from "../../api/storage";
 import { useAuth } from "../../context/AuthContext";
 
 const signin = async (username: string, password: string) => {
   const response = await axios.post(
-    "https://react-bank-project.eapi.joincoded.com/mini-project/api/auth/login",
+    buildUrl(API_CONFIG.ENDPOINTS.LOGIN),
     {
       username,
       password,
@@ -38,10 +40,28 @@ const Login = () => {
       username: string;
       password: string;
     }) => signin(username, password),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      const token = data.token || data.access_token || data.auth_token || data.accessToken;
+      
+      if (!token) {
+        Alert.alert("Login Error", "No authentication token received from server");
+        return;
+      }
+      
+      try {
+        await storeToken(token);
+        
+        const { getToken } = require("../../api/storage");
+        const storedToken = await getToken();
+        
+      } catch (error) {
+        Alert.alert("Login Error", "Failed to store authentication token");
+        return;
+      }
+      
       setIsAuthenticated(true);
       Alert.alert("Login Success");
-      router.replace("/");
+      router.replace("/(protected)/(tabs)/home");
     },
     onError: (error: any) => {
       Alert.alert(
